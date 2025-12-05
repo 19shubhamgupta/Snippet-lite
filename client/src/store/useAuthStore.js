@@ -1,0 +1,78 @@
+import { create } from "zustand";
+import { axiosInstance } from "../lib/axios";
+import toast from "react-hot-toast";
+
+export const useStoreAuth = create((set) => ({
+  authUser: null,
+  isSigningup: false,
+  isLoggingIn: false,
+  isCheckingAuth: false,
+  showNavBar: true,
+
+  setprofileClicked: (val) => {
+    set({ profileClicked: val });
+  },
+  toggleNav: (val) => {
+    set({ showNavBar: val });
+  },
+  checkAuth: async () => {
+    set({ isCheckingAuth: true });
+    try {
+      const res = await axiosInstance.get("/user/auth/check");
+      set({ authUser: res.data });
+    } catch (err) {
+      set({ authUser: null });
+      toast.error("Authentication check failed. ", err.message);
+    } finally {
+      set({ isCheckingAuth: false });
+    }
+  },
+
+  signup: async (data) => {
+    set({ isSigningup: true });
+    try {
+      const res = await axiosInstance.post("/user/auth/signup", data);
+      set({ authUser: res.data });
+      toast.success("Signup successful!");
+    } catch (err) {
+      if (err.response) {
+        toast.error(err.response.data?.message || "Signup failed");
+      } else {
+        toast.error("Network error — please try again");
+      }
+    } finally {
+      set({ isSigningup: false });
+    }
+  },
+
+  login: async (data) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/user/auth/login", data);
+      set({ authUser: res.data });
+      toast.success("Login successful!");
+    } catch (err) {
+      if (err.response) {
+        toast.error(err.response.data?.message || "Login failed");
+      } else {
+        toast.error("Network error — please try again");
+      }
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+
+  logout: async () => {
+    try {
+      await axiosInstance.post("user/auth/logout");
+      set({ authUser: null });
+      toast.success("Logout successful!");
+    } catch (err) {
+      if (err.response) {
+        toast.error(err.response.data?.message || "Logout failed");
+      } else {
+        toast.error("Network error — please try again");
+      }
+    }
+  },
+}));
